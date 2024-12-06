@@ -27,7 +27,7 @@ def PebbleRateChart(mt, pb_rate_transient, pb_rate_ma, pb_rate_linear):
     fig.update_xaxes(title_text = "Cumulative MT Milled")
 
     # Update axis format
-    fig.update_yaxes(range = [100, 800])
+    fig.update_yaxes(range = [100, 650])
 
     # Update figure format
     fig.update_layout(
@@ -61,20 +61,25 @@ def read_xlsx(path):
     return df
 
 
-def GrateWearChart(mt, outer_grate, outer_pebble):
+def GrateWearChart(mt, outer_grate, outer_pebble, mid_grate):
     # Add plot
     fig = go.Figure()
     # 绘制散点图
     fig.add_trace(go.Scatter(x = mt, y = outer_grate, 
-                            name = '22mm Outer Grate:  OA = 24,451 MT + 151,708 [mm²]', mode = 'lines', 
+                            name = '22mm Outer Grate:  OA = 23,082 MT + 147,474 [mm²]', mode = 'lines', 
                             line = dict(color = 'orange', width = 3) 
                             ))
     # 绘制移动平均线
     fig.add_trace(go.Scatter(x = mt, y = outer_pebble, 
-                             name = '60mm/65mm Outer Grate:  OA = 13,258 MT + 240,166 [mm²]', mode = 'lines', 
+                             name = '65mm Outer Grate:  OA = 17,376 MT + 187,877 [mm²]', mode = 'lines', 
                              line = dict(color='royalblue', width = 3) 
                              ))
-
+    # 绘制线性拟合曲线
+    fig.add_trace(
+        go.Scatter(x = mt, y = mid_grate, 
+                   name = '22mm Mid Grate:  OA = 14,679 MT + 128,530 [mm²]', mode = 'lines',  
+                   line = dict(color = 'gray', width = 3) 
+                   ))
     fig.update_yaxes(title_text = "Open Area - mm²")
     fig.update_xaxes(title_text = "Cumulative MT Milled")
 
@@ -109,144 +114,130 @@ def GrateWearChart(mt, outer_grate, outer_pebble):
 
 def app():
     #########################################################################
-    ############################## Section 1 ################################
-    st.subheader("1. Campagin Pebble Rate Data - SuperVortex DE with Pebble Crusher Fully Off", divider = 'rainbow')
+    st.subheader("SAG Mill #1 Wear Sensor Installation", divider = 'rainbow')
     # st.subheader("", divider='red')
-    st.markdown("Pebble Rate vs Cumulative Tons Milled Correlation")
 
-    st.latex(r'''
-                Pebble Rate = 104.43 \times (Cumulative Tons Milled) + 373.56 \hspace{1em} [t/h]
-            ''')
 
-    #st.markdown('<style>h5{color: red; margin-left:10%; }</style>', unsafe_allow_html=True)
-    #st.markdown(" <h5 > Pebble Rate = 38.154 x (Cumulative Milled Tons) +279.48 <h5>",unsafe_allow_html = True)
-    start_row = 2  # Assuming the first row contains headers
-    column_names = ['MT Processed', 'Pebble Rate (t/h)']
-    
-    # file_path = './resources/module1/RedialDE_SitePebbleRateData.xlsx'
-    df = pd.read_excel('./resources/module2/SVDE_CrusherOff_SitePebbleRateData.xlsx', skiprows = start_row - 1)
-    df.columns = column_names
-    dfs = df
-    df['Moving Average'] = df['Pebble Rate (t/h)'].rolling(window = 100).mean()
-    
-    # 线性拟合 | Linera Regression
-    df_filtered = df[(df['MT Processed'] >= 0) & (df['MT Processed'] <= 1.6)]
-    x = df_filtered['MT Processed']
-    y = df_filtered['Pebble Rate (t/h)']
-    coefficients = np.polyfit(x, y, 1)
-    linear_fit = np.polyval(coefficients, x)
-
-    plotlyChart = PebbleRateChart(df['MT Processed'], df['Pebble Rate (t/h)'], df['Moving Average'], linear_fit)
-    st.plotly_chart(plotlyChart, use_container_width = True)
-    
-    # Some Space
+    ############################## Section 1 ################################
+    st.markdown("1. Wear Sensor Installation Details")
+    cl1, cl2 = st.columns([1, 1], gap="medium", vertical_alignment="center")
+    with cl1:
+        st.image("sagMap.png", use_column_width=True)
+    with cl2:
+        st.image("shell.png", use_column_width=True)
+        st.success("👍 Sensor ***P6051*** was installed on Row ***#8 FE Shell***")
+        st.success("👍 Sensor ***P6052*** was installed on Row ***#9 MID Shell***")
     st.markdown("###")
 
-    # show the recycle date
-    df_selected = df.iloc[:, :2]
-    # st.table(df_selected)
-    st.markdown("Filtered Pebble Rate Data")
-    st.dataframe(df_selected.style.format({"MT Processed": "{:.3f}", "Pebble Rate (t/h)": "{:.1f}"}), use_container_width = True, hide_index = True, column_config = {"MT Processed": {"alignment": "center"}, "Pebble Rate (t/h)": {"alignment": "center"}})
-    # Some Space
-    st.markdown("###")
-    
-    
-    
-    
-    #########################################################################
     ############################## Section 2 ################################
-    # 22mm Outer Grate
-    st.subheader("2. Open Area Wear Tracking", divider = 'rainbow')
-    st.markdown("22mm Outer Grate")
-    radial22grate1, radial22grate2 = st.columns([2,3], gap="large", vertical_alignment="center")
-    radial22grate1.image("./resources/module2/SVGrate.jpg", caption = "Grate Slot Locations")
-    radial22grate2.image( "./resources/module2/SV_CoffGrateWear.jpg")
-    with st.expander("22mm Outer Grate Wear Table"):
-        df1 = read_xlsx("./resources/module2/SV_CoffGrateWear.xlsx")
-        column_names1 = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K']
-        df1.columns = column_names1
-        st.dataframe(df1, use_container_width = True, hide_index = True)
-    
-    # 65mm Outer Grate
-    st.subheader("", divider='gray')
-    st.markdown("60mm/65mm Outer Pebble")
-    radial65pebble1, radial65pebble2 = st.columns([2,3], gap="large", vertical_alignment="center")
-    radial65pebble1.image('./resources/module2/SVPebble.jpg', caption = "Pebble Slot Locations")
-    radial65pebble2.image('./resources/module2/SV_CoffPebbleWear.jpg')
-    with st.expander("60mm/65mm Outer Grate Wear Table"):
-        df2 = read_xlsx("./resources/module2/SV_CoffPebbleWear.xlsx")
-        column_names2 = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K']
-        df2.columns = column_names2
-        st.dataframe(df2, use_container_width = True, hide_index = True)    
-    st.subheader("", divider='gray')
+    st.markdown("2. Wear Sensor Database")
+    totalH = 400
+    cl11, cl12 = st.columns(2)
+    with cl11:
+        st.caption("Latest Data Received at" + " 11:35:20 02-12-2024")
+        sensor1 = str(210) + "mm"
+        dff1 = 210-totalH
+        cl11.metric(label = "Sensor P6051 Sensor Reading", value = sensor1, delta = dff1)
+    with cl12:
+        st.caption("Latest Data Received at" + " 11:35:20 02-12-2024")
+        sensor2 = str(210) + "mm"
+        dff2 = 210-totalH
+        cl12.metric(label = "Sensor P6052 Sensor Reading", value = sensor1, delta = dff2)
 
-    # Ploting the wear   
-    st.markdown("###")
-    st.markdown("Open Area vs Cumulative Milled Tons Correlation")
-    # 创建一些示例数据
-    # 假设Y的取值范围是从0到100
-    X = np.arange(0, 4, 0.05)
-    # 根据公式计算X的值
-    Grate22mm = 24451 * X + 151708
-    Pebble65mm = 13258 * X + 240166
-    # 绘制原始数据点和拟合线
-    fig2 = GrateWearChart(X, Grate22mm, Pebble65mm)
-    st.plotly_chart(fig2, use_container_width = True)
-    st.markdown("###")
 
-    # Display Metrics and clac
-    #st.subheader("", divider = 'gray')
-    st.markdown("Open Area/Grate | Pebble Predictions")
+    ############################## Section Display Dataframe ################################
+    st.markdown("###")
+    st.markdown("Historical Wear Dataframe")
+    file_path1 = 'database.xlsx'
+    # Specify the sheet name
+    sheet_name1 = 'SAG1'
     
-    grate22, grate6065 = st.columns(2, gap="large", vertical_alignment="bottom")
-    # 22mm Outer Grate
-    grate22.markdown("22mm Grate")
-    grate22input=grate22.text_input("Please input cumulative million tons","0", key="model2grate22")
-    grate22.markdown("###")
-    grate22.metric('Open Area Predicted - mm²:', int(24451*float(grate22input) + 151708))
-    # 65mm Outer Grate    
-    grate6065.markdown("60mm/65mm Grate")
-    grate6065input=grate6065.text_input("Please input cumulative million tons","0", key="model2grate6065")
-    grate6065.markdown("###")
-    grate6065.metric('Open Area Predicted - mm²', int(13258*float(grate6065input) + 240166))
+    df1 = pd.read_excel(file_path1, sheet_name=sheet_name1, header=None, skiprows= 1)
 
-    
-    #########################################################################
-    ############################## Section 3 ################################
-    # Display Pebble Rate Metrics
-    st.markdown("###")
-    st.subheader("3. Pebble Rate Forecast Modelling", divider='rainbow')
-    st.markdown("Pebble Rate Generation / Each Liner")
-    pebblerate1, pebblerate2 = st.columns(2, gap="medium")
-    pebblerate1.markdown("22mm Outer Grate")
-    pebblerate2.markdown("60mm/65mm Outer Grate")
+    # Specify the column names as a list
+    column_names1 = ['P6051 Datetime', 'P6051 Reading', 'P6052 Datetime', 'P6052 Reading']
 
-    pebblerate1.metric(label="Pebble rate / part ratio",value="1.0")
-    pebblerate1.metric(label="Pebble rate / part @ new - tph",value="5.56")
-    pebblerate1.metric(label="Pebble rate / part @ 3.0 MT- tph",value="12.37")
-    
-    pebblerate2.metric(label="Pebble rate / part ratio",value="4.079")
-    pebblerate2.metric(label="Pebble rate / part @ new - tph",value="22.68")
-    pebblerate2.metric(label="Pebble rate / part @ 3.0 MT- tph",value="50.46")
-    
-    st.markdown("###")
-    
-    # Display User Input
-    MTO=st.text_input("Please input cumulative million tons for forecast","0",key="model1MTO")
-    
-    X0input, Y0input = st.columns(2, gap="medium", vertical_alignment="bottom")
-    
-    X0 = X0input.number_input("Please input number of grates", min_value = 0, max_value = 36, value = 27, step = 1)
-    Y0 = Y0input.number_input("Please input number of pebble", min_value = 0, max_value = 36, value = 9, step = 1)
-    st.markdown("###")
+    # Assign column names to DataFrame
+    df1.columns = column_names1
 
-    # Calculate
-    calculate = st.button("Calculate Total Open Area and Forecast Pebble Rate", use_container_width=True)
+    # Display Table
+    st.dataframe(df1, hide_index=True, use_container_width=True)
+
+
+
+
+################################## plot data ###############################################
     st.markdown("###")
-    calculateresult1, calculateresult2 = st.columns(2)
-    if calculate:
-       if int(X0) + int(Y0) == 36:
-        calculateresult1.metric(label="Total Open Area m² is:", value = round(((24451 * float(MTO) + 151708) * float(X0) + (13258 * float(MTO) + 240166) * float(Y0)) / 1000000,  2))
-        calculateresult2.metric(label="Forecast Pebble Rate - t/h is:", value = round((2.27 * float(MTO) + 5.56) * float(X0) + (9.26 * float(MTO) + 22.68) * float(Y0), 2))
-       else:
-           st.error("Please check your input,grates plus pebble should be 36!")
+    st.markdown("3. Wear Sensor Plots")
+    
+    # Specify the file path
+    file_path = 'sensorReading.xlsx'
+
+    # Specify the sheet name
+    sheet_name = 'Sheet1'
+
+    # Specify the column names as a list
+    column_names = ['DateTime', 'P6051', 'P6052']
+
+    # Import via Pandas
+    # Read the Excel sheet with specified range and column names
+    df = pd.read_excel(file_path, sheet_name=sheet_name, header=None,
+                    skiprows=1)
+
+    # Assign column names to DataFrame
+    df.columns = column_names
+
+    # covert date time format
+    df['DateTime'] = pd.to_datetime(df['DateTime'])
+
+    # Plot in plotly
+    # Add the second trace with the secondary y-axis
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df['DateTime'], y=df['P6051'], name='P6051',  mode='lines+markers') )
+    fig.add_trace(go.Scatter(x=df['DateTime'], y=df['P6052'], name='P6052',  mode='lines+markers') )
+
+    # Update axis format
+    fig.update_yaxes(title_text="Sensor Thickness - mm")
+    fig.update_xaxes(title_text="Date and Time")
+    fig.update_yaxes(range=[0, 450])
+
+    # Update figure format
+    fig.update_layout(
+        margin=dict(l=1, r=1, t=30, b=1),
+        template="seaborn"
+    )
+
+    fig.update_layout(
+        showlegend=True,
+        font=dict(
+            family="Ubuntu, regular",
+            size=12,
+            color="Black"
+        )
+    )
+
+    fig.update_layout(legend=dict(
+            yanchor="top",
+            y=0.3,
+            xanchor="left",
+            x=0.03
+        )
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    ################################## 3D Model ###############################################
+    st.markdown("###")
+    st.markdown("4. 3D Liner Model")
+    iframeLINK = "https://kitware.github.io/glance/app/?name=millShellWearMonitoring.vtkjs&url=https://webify-1306024390.cos.ap-shanghai.myqcloud.com/millShellWearMonitoring.vtkjs"
+    #local_pvModel(iframeLINK)
+    #pvOBJ = read_file_from_url(iframeLINK)
+    #components.html(pvOBJ, height=1000)
+    
+    #HtmlFile_tSS1 = open("hydrocyclone.html", 'r', encoding='utf-8').read()
+    #components.html(HtmlFile_tSS1, height=1000)
+
+    st.write(
+            f'<iframe src=' + iframeLINK + ' height = "800" width = "100%"></iframe>',
+            unsafe_allow_html=True,
+    )
