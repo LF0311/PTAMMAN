@@ -114,7 +114,7 @@ def GrateWearChart(mt, outer_grate, outer_pebble, mid_grate):
 
 def app():
     #########################################################################
-    st.subheader("SAG Mill #1 Wear Sensor Installation", divider = 'rainbow')
+    st.subheader("SAG Mill #2 Wear Sensor Installation", divider = 'rainbow')
     # st.subheader("", divider='red')
 
 
